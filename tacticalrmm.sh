@@ -25,7 +25,7 @@ BFR="\\r\\033[K"; HOLD=" "
 CM="${GN}✓${CL}"; CROSS="${RD}✗${CL}"; INFO="${BL}ℹ${CL}"; WARN="${YW}⚠${CL}"
 
 # ─── GitHub-Basis-URL (wird beim Veröffentlichen angepasst) ───────────────────
-GITHUB_RAW="https://raw.githubusercontent.com/DEIN-GITHUB-USER/tacticalrmm-proxmox/main"
+GITHUB_RAW="https://raw.githubusercontent.com/yodaeichen/tacticalrmm-proxmox/main"
 
 # ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
 msg_info()  { local msg="$1"; echo -ne " ${HOLD} ${YW}${msg}...${CL}"; }

@@ -43,8 +43,11 @@ TACTICAL_PASS=""
 TARGET_VMID=""
 SSH_USER="tactical"
 
-DEBIAN_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
-DEBIAN_IMAGE="debian-12-genericcloud-amd64.qcow2"
+# OS-Images (werden durch select_os_version gesetzt)
+DEBIAN_URL=""
+DEBIAN_IMAGE=""
+DEBIAN_VERSION=""
+DEBIAN_CODENAME=""
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
@@ -167,6 +170,53 @@ select_storage() {
   fi
 }
 
+# ─── OS-Version auswählen ─────────────────────────────────────────────────────
+select_os_version() {
+  echo ""
+  echo -e " ${BOLD}Betriebssystem wählen:${CL}"
+  echo ""
+  echo -e "  ${BOLD}1)${CL} ${GN}Debian 12 (Bookworm)${CL}  ${GN}← Empfohlen${CL}"
+  echo -e "     ${DIM}Offiziell unterstützt von Tactical RMM${CL}"
+  echo ""
+  echo -e "  ${BOLD}2)${CL} ${YW}Debian 13 (Trixie)${CL}   ${YW}⚠ Experimentell${CL}"
+  echo -e "     ${DIM}Noch NICHT offiziell von Tactical RMM unterstützt.${CL}"
+  echo -e "     ${DIM}Python 3.13 / PostgreSQL 17 können Probleme verursachen.${CL}"
+  echo -e "     ${DIM}Nur für Tests – nicht für Produktion empfohlen!${CL}"
+  echo ""
+  read -rp " Auswahl [1/2, Enter = 1]: " os_choice
+  os_choice="${os_choice:-1}"
+
+  case "$os_choice" in
+    2)
+      DEBIAN_VERSION="13"
+      DEBIAN_CODENAME="trixie"
+      DEBIAN_IMAGE="debian-13-genericcloud-amd64.qcow2"
+      DEBIAN_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
+      echo ""
+      echo -e " ${RD}${BOLD}ACHTUNG:${CL} ${YW}Debian 13 (Trixie) ist von Tactical RMM${CL}"
+      echo -e " ${YW}offiziell NICHT unterstützt. Das TRMM-Installationsscript${CL}"
+      echo -e " ${YW}kann fehlschlagen. Nur auf eigene Gefahr verwenden!${CL}"
+      echo ""
+      read -rp " Wirklich Debian 13 verwenden? [j/N]: " confirm13
+      confirm13="${confirm13:-N}"
+      if [[ "${confirm13,,}" != "j" ]]; then
+        msg_warn "Zurück zu Debian 12."
+        select_os_version
+        return
+      fi
+      msg_ok "OS: Debian 13 Trixie (experimentell)"
+      ;;
+    *)
+      DEBIAN_VERSION="12"
+      DEBIAN_CODENAME="bookworm"
+      DEBIAN_IMAGE="debian-12-genericcloud-amd64.qcow2"
+      DEBIAN_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+      msg_ok "OS: Debian 12 Bookworm (empfohlen)"
+      ;;
+  esac
+}
+
+
 # =============================================================================
 #  MODUS 1: INSTALLATION
 # =============================================================================
@@ -176,9 +226,12 @@ mode_install() {
   divider
   echo -e " ${BOLD}${GN}NEUE VM INSTALLIEREN${CL}"
   divider
-  echo -e " ${DIM}Erstellt eine Debian 12 VM und bereitet die Installation von Tactical RMM vor.${CL}"
+  echo -e " ${DIM}Erstellt eine Debian VM und bereitet die Installation von Tactical RMM vor.${CL}"
   echo -e " ${WARN} Tactical RMM benötigt 3 DNS A-Records (rmm/api/mesh) auf deine Domain!"
   echo ""
+
+  # OS-Version
+  select_os_version
 
   # VM-ID
   local next_id
@@ -230,6 +283,7 @@ mode_install() {
   echo -e " ${BOLD}Zusammenfassung${CL}"
   divider
   printf "  %-16s ${BOLD}%s${CL}\n"    "VM-ID:"     "$VMID"
+  printf "  %-16s ${BOLD}%s${CL}\n"    "OS:"        "Debian ${DEBIAN_VERSION} (${DEBIAN_CODENAME})"
   printf "  %-16s ${BOLD}%s${CL}\n"    "Hostname:"  "$HOSTNAME"
   printf "  %-16s ${BOLD}%s${CL}\n"    "CPU-Kerne:" "$CORES"
   printf "  %-16s ${BOLD}%s MB${CL}\n" "RAM:"       "$RAM"
@@ -238,6 +292,10 @@ mode_install() {
   [[ -n "$VLAN" ]] && printf "  %-16s ${BOLD}%s${CL}\n" "VLAN:" "$VLAN"
   printf "  %-16s ${BOLD}%s${CL}\n"    "Storage:"   "$STORAGE"
   printf "  %-16s ${BOLD}%s${CL}\n"    "Autostart:" "$START_VM"
+  if [[ "$DEBIAN_VERSION" == "13" ]]; then
+    echo ""
+    echo -e "  ${YW}⚠ Debian 13 ist von Tactical RMM nicht offiziell unterstützt!${CL}"
+  fi
   echo ""
   read -rp " Jetzt erstellen? [J/n]: " confirm
   confirm="${confirm:-J}"
@@ -333,10 +391,10 @@ power_state:
 CLOUDINIT
 
   # Debian Cloud-Image laden
-  msg_info "Lade Debian 12 Cloud-Image"
+  msg_info "Lade Debian ${DEBIAN_VERSION} (${DEBIAN_CODENAME}) Cloud-Image"
   wget -q --show-progress -O "$TEMP_DIR/$DEBIAN_IMAGE" "$DEBIAN_URL" \
     || msg_error "Download fehlgeschlagen!"
-  msg_ok "Debian 12 Cloud-Image geladen"
+  msg_ok "Debian ${DEBIAN_VERSION} Cloud-Image geladen"
 
   # VM erstellen
   msg_info "Erstelle VM ${VMID}"

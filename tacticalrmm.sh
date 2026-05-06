@@ -34,7 +34,7 @@ INFO="${BL}ℹ${CL}"
 WARN="${YW}⚠${CL}"
 
 # ─── GitHub-Basis-URL (DEIN-GITHUB-USER ersetzen!) ────────────────────────────
-GITHUB_RAW="https://raw.githubusercontent.com/DEIN-GITHUB-USER/tacticalrmm-proxmox/main"
+GITHUB_RAW="https://raw.githubusercontent.com/yodaeichen/tacticalrmm-proxmox/main"
 
 # ─── Globale Variablen ────────────────────────────────────────────────────────
 VMID=""

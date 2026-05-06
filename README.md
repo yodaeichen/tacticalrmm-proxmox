@@ -33,7 +33,7 @@ Dieses Script erstellt daher immer eine vollwertige Debian 12 VM.
 Auf dem **Proxmox-Host** als `root` ausführen:
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/DEIN-GITHUB-USER/tacticalrmm-proxmox/main/tacticalrmm.sh)"
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/yodaeichen/tacticalrmm-proxmox/main/tacticalrmm.sh)"
 ```
 
 Das Script öffnet ein interaktives Menü mit allen Funktionen.
